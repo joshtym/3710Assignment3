@@ -1,16 +1,16 @@
-#ifndef PENTADRAPAIR_H
-#define PENTADRAPAIR_H
+#ifndef GLDONUT_H
+#define GLDONUT_H
 
 #include <GL/glut.h>
 
-class PentadraPair
+class GLDonut
 {
 	public:
 		// Constructor: Default
-		PentadraPair();
+		GLDonut();
 		
 		// Destructor
-		~PentadraPair();
+		~GLDonut();
 		
 		// Assigns new origin values of the PentadraPair object
 		void assignOriginValues(double, double, double);

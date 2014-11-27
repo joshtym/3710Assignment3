@@ -1,6 +1,9 @@
 #include <GL/glut.h>
 #include <cmath>
-#include "PentadraPair.h"
+#include "GLDonut.h"
+
+enum Colour{RED = 0, GREEN = 1, BLUE = 2};
+enum Type{AMBIENT = 0, DIFFUSE = 1, SPECULAR = 2, EMISSION = 3};
 
 // Function Prototypes
 
@@ -38,6 +41,8 @@ void rotateAboutArbitraryAxis(double[], GLfloat, GLfloat, GLfloat, double);
 // Deal with OpenGL's rendition of UP, DOWN, LEFT, RIGHT cursor keys
 void processSpecialKeys(int, int, int);
 
+void changeColour(Colour, char, Type);
+
 // Global Variables
 static GLfloat spin = 0.0;
 static bool isRotating = true;
@@ -55,17 +60,25 @@ static double VPN[3];
 static double VUP[3];
 static double VRP[3];
 
+static GLfloat mat_ambient[4];
+static GLfloat mat_diffuse[4];
+static GLfloat mat_specular[4];
+static GLfloat mat_emission[4];
+static GLfloat low_shininess[1];
+
 // Global object
-static PentadraPair pentadra1;
-static PentadraPair pentadra2;
-static PentadraPair pentadra3;
-static PentadraPair pentadra4;
-static PentadraPair pentadra5;
-static PentadraPair pentadra6;
-static PentadraPair pentadra7;
-static PentadraPair pentadra8;
-static PentadraPair pentadra9;
-static PentadraPair pentadra10;
+static GLDonut glDonut1;
+static GLDonut glDonut2;
+static GLDonut glDonut3;
+static GLDonut glDonut4;
+static GLDonut glDonut5;
+static GLDonut glDonut6;
+static GLDonut glDonut7;
+static GLDonut glDonut8;
+static GLDonut glDonut9;
+static GLDonut glDonut10;
+
+static Colour colourBeingChanged = RED;
 
 int main(int argc, char **argv)
 {
@@ -75,9 +88,9 @@ int main(int argc, char **argv)
 	glutInitWindowSize(500, 500);
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow(argv[0]);
-	
+
 	init();
-	
+
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display);
 	glutMouseFunc(mouse);
@@ -85,7 +98,7 @@ int main(int argc, char **argv)
 	glutSpecialFunc(processSpecialKeys);
 	glutIdleFunc(action);
 	glutMainLoop();
-	
+
 	return 0;
 }
 
@@ -103,36 +116,82 @@ void init()
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
 	// Give the VRP, VPN, and VUP default values
 	VRP[0] = 0;
 	VRP[1] = 0;
 	VRP[2] = 5;
-	
+
 	VPN[0] = 0;
 	VPN[1] = 0;
 	VPN[2] = -1;
-	
+
 	VUP[0] = 0;
 	VUP[1] = 1;
 	VUP[2] = 0;
-	
+
 	// Assign initial origin values to Pentadras
-	pentadra1.assignOriginValues(cos(0), sin(0), -10);
-	pentadra2.assignOriginValues(cos(PI/3), sin(PI/3), -7);
-	pentadra3.assignOriginValues(cos(2*PI/3), sin(2*PI/3), -4);
-	pentadra4.assignOriginValues(cos(PI), sin(PI), -1);
-	pentadra5.assignOriginValues(cos(4*PI/3), sin(4*PI/3), 2);
-	pentadra6.assignOriginValues(cos(5*PI/3), sin(5*PI/3), 5);
-	pentadra7.assignOriginValues(cos(0), sin(0), 8);
-	pentadra8.assignOriginValues(cos(PI/3), sin(PI/3), 11);
-	pentadra9.assignOriginValues(cos(2*PI/3), sin(2*PI/3), 14);
-	pentadra10.assignOriginValues(cos(PI), sin(PI), 17);
+	glDonut1.assignOriginValues(cos(0), sin(0), -10);
+	glDonut2.assignOriginValues(cos(PI/3), sin(PI/3), -7);
+	glDonut3.assignOriginValues(cos(2*PI/3), sin(2*PI/3), -4);
+	glDonut4.assignOriginValues(cos(PI), sin(PI), -1);
+	glDonut5.assignOriginValues(cos(4*PI/3), sin(4*PI/3), 2);
+	glDonut6.assignOriginValues(cos(5*PI/3), sin(5*PI/3), 5);
+	glDonut7.assignOriginValues(cos(0), sin(0), 8);
+	glDonut8.assignOriginValues(cos(PI/3), sin(PI/3), 11);
+	glDonut9.assignOriginValues(cos(2*PI/3), sin(2*PI/3), 14);
+	glDonut10.assignOriginValues(cos(PI), sin(PI), 17);
+	
+	// light properties
+	GLfloat ambient[] = { 0.1, 0.2, 0.05, 1.0 };
+	GLfloat diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat position[] = { 0.0, 3.0, 2.0, 0.0 };
+	
+	// material properties
+	GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
+	
+	mat_ambient[0] = 0.2;
+	mat_ambient[1] = 0.3;
+	mat_ambient[2] = 0.1;
+	mat_ambient[3] = 1.0;
+	
+	mat_diffuse[0] = 0.1;
+	mat_diffuse[1] = 0.5;
+	mat_diffuse[2] = 0.8;
+	mat_diffuse[3] = 1.0;
+	
+	mat_specular[0] = 1.0;
+	mat_specular[1] = 1.0;
+	mat_specular[2] = 1.0;
+	mat_specular[3] = 1.0;
+	
+	GLfloat no_shininess[] = { 0.0 };
+	low_shininess[0] = 5.0;
+	GLfloat high_shininess[] = { 100.0 };
+	
+	mat_emission[0] = 0.03;
+	mat_emission[1] = 0.1;
+	mat_emission[2] = 0.04;
+	mat_emission[3] = 0.0;
+	
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, position);
+	
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, low_shininess);
+	glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
 }
 
 //***************************************************************
 // Function: display
-// Purpose: Handle all display. This includes drawing, rotation and 
+// Purpose: Handle all display. This includes drawing, rotation and
 //          handling of the OpenGL pipeline
 //***************************************************************
 void display()
@@ -140,31 +199,39 @@ void display()
 	// Clear the colour buffer and depth buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glCullFace(GL_BACK);
-	
+
 	// Handle perspective of the projection matrix
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60.0, (GLfloat) screenWidth/(GLfloat) screenHeight,0.1, 25.0);
-	
+
 	// Deal with the appropiate 'camera' viewpoint
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(VRP[0], VRP[1], VRP[2], VRP[0] + VPN[0], VRP[1] + VPN[1], VRP[2] + VPN[2], VUP[0], VUP[1], VUP[2]);
+
+	glPushMatrix();
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SHININESS, low_shininess);
+		glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+	glPopMatrix();
 	
 	// Draw and rotate each item accordingly
-	pentadra1.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra2.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra3.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra4.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra5.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra6.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra7.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra8.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra9.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	pentadra10.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
-	
+	glDonut1.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut2.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut3.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut4.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut5.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut6.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut7.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut8.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut9.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+	glDonut10.drawAndRotate(spin, xAxisRotation, yAxisRotation, zAxisRotation);
+
 	glutSwapBuffers();
-	
+
 	glFlush();
 }
 
@@ -176,12 +243,12 @@ void action()
 {
 	if (isRotating)
 	{
-		spin = spin + 0.10;
-	
+		spin = spin + 0.75;
+
 		if (spin > 360.0)
 			spin = spin - 360;
 	}
-	
+
 	glutPostRedisplay();
 }
 
@@ -267,10 +334,49 @@ void keyboard(unsigned char key, int xPos, int yPos)
 		case 109:
 			rotateAboutArbitraryAxis(VUP, VPN[0], VPN[1], VPN[2], PI/20 * -1);
 			break;
+		case 104:
+			glShadeModel(GL_FLAT);
+			break;
+		case 72:
+			glShadeModel(GL_SMOOTH);
+			break;
+		case 48:
+			colourBeingChanged = RED;
+			break;
+		case 49:
+			colourBeingChanged = GREEN;
+			break;
+		case 50:
+			colourBeingChanged = BLUE;
+			break;
+		case 97:
+			changeColour(colourBeingChanged, '-', AMBIENT);
+			break;
+		case 65:
+			changeColour(colourBeingChanged, '+', AMBIENT);
+			break;
+		case 100:
+			changeColour(colourBeingChanged, '-', DIFFUSE);
+			break;
+		case 68:
+			changeColour(colourBeingChanged, '+', DIFFUSE);
+			break;
+		case 115:
+			changeColour(colourBeingChanged, '-', SPECULAR);
+			break;
+		case 83:
+			changeColour(colourBeingChanged, '+', SPECULAR);
+			break;
+		case 101:
+			changeColour(colourBeingChanged, '-', EMISSION);
+			break;
+		case 69:
+			changeColour(colourBeingChanged, '+', EMISSION);
+			break;
 		default:
 			break;
 	}
-			
+
 }
 
 //***************************************************************
@@ -287,7 +393,7 @@ void processSpecialKeys(int key, int xx, int yy)
 	crossVupVpn[0] = computeCrossProduct(VUP, VPN)[0];
 	crossVupVpn[1] = computeCrossProduct(VUP, VPN)[1];
 	crossVupVpn[2] = computeCrossProduct(VUP, VPN)[2];
-	
+
 	switch (key)
 	{
 		case GLUT_KEY_LEFT:
@@ -352,7 +458,7 @@ void reshape(int width, int height)
 	//gluLookAt(1.5, 1.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	gluLookAt(VRP[0], VRP[1], VRP[2], VRP[0] + VPN[0], VRP[1] + VPN[1], VRP[2] + VPN[2], VUP[0], VUP[1], VUP[2]);
 	//gluLookAt(VRP[0] + VPN[0], VRP[1] + VPN[1], VRP[2] + VPN[2], VRP[0], VRP[1], VRP[2], VUP[0], VUP[1], VUP[2]);
-	
+
 	screenWidth = width;
 	screenHeight = height;
 }
@@ -390,11 +496,11 @@ void changeAxisRotation(double xAxis, double yAxis, double zAxis)
 double* computeCrossProduct (double vector1[3], double vector2[3])
 {
 	double crossProductVector[3];
-	
+
 	crossProductVector[0] = vector1[1]*vector2[2] - vector1[2]*vector2[1];
 	crossProductVector[1] = (vector1[2]*vector2[0] - vector1[0]*vector2[2]) * -1;
 	crossProductVector[2] = vector1[0]*vector2[1] - vector1[1]*vector2[0];
-	
+
 	return crossProductVector;
 }
 
@@ -403,18 +509,187 @@ double* computeCrossProduct (double vector1[3], double vector2[3])
 // Purpose: Rotates vector A about vector with x, y, z values of
 //			uX, uY, uZ by theta. Provided by the professor
 //***************************************************************
-void rotateAboutArbitraryAxis(double* A, GLfloat uX, GLfloat uY, GLfloat uZ, double theta) 
+void rotateAboutArbitraryAxis(double* A, GLfloat uX, GLfloat uY, GLfloat uZ, double theta)
 {
 	double ct, st, lv0, lv1, lv2;
-	
+
 	ct = cos(theta);
 	st = sin(theta);
-	
+
 	lv0 = A[0];
 	lv1 = A[1];
 	lv2 = A[2];
-	
+
 	A[0] = lv0 * (uX*uX + ct * (1.0 - uX*uX)) + lv1 * (uX*uY * (1.0 - ct) - uZ * st) + lv2 * (uZ * uX * (1.0 - ct) + uY * st);
 	A[1] = lv0 * (uX*uY * (1.0 - ct) + uZ*st) + lv1 * (uY*uY +  ct * (1.0 - uY*uY)) +lv2 * (uY*uZ * (1.0 - ct) - uX*st);
 	A[2] = lv0 * (uZ*uX * (1.0 - ct) - uY*st) + lv1 * (uY*uZ * (1.0 - ct) + uX*st) + lv2 * (uZ*uZ +  ct * (1.0 - uZ*uZ));
+}
+
+void changeColour(Colour changingColour, char upOrDown, Type typeBeingChanged)
+{
+	switch (typeBeingChanged)
+	{
+		case AMBIENT:
+			{
+				if (changingColour == RED && upOrDown == '-')
+				{
+					mat_ambient[0] -= 0.01;
+					if (mat_ambient[0] < 0)
+						mat_ambient[0] = 0;
+				}
+				else if (changingColour == RED && upOrDown == '+')
+				{
+					mat_ambient[0] += 0.01;
+					if (mat_ambient[0] > 1)
+						mat_ambient[0] = 1;
+				}
+				else if (changingColour == GREEN && upOrDown == '-')
+				{
+					mat_ambient[1] -= 0.01;
+					if (mat_ambient[1] < 0)
+						mat_ambient[1] = 0;
+				}
+				else if (changingColour == GREEN && upOrDown == '+')
+				{
+					mat_ambient[0] += 0.01;
+					if (mat_ambient[0] > 1)
+						mat_ambient[0] = 1;
+				}
+				else if (changingColour == BLUE && upOrDown == '-')
+				{
+					mat_ambient[2] -= 0.01;
+					if (mat_ambient[2] < 0)
+						mat_ambient[2] = 0;
+				}
+				else if (changingColour == BLUE && upOrDown == '+')
+				{
+					mat_ambient[0] += 0.01;
+					if (mat_ambient[0] > 1)
+						mat_ambient[0] = 1;
+				}
+			}
+			break;
+		case DIFFUSE:
+			{
+				if (changingColour == RED && upOrDown == '-')
+				{
+					mat_diffuse[0] -= 0.01;
+					if (mat_diffuse[0] < 0)
+						mat_diffuse[0] = 0;
+				}
+				else if (changingColour == RED && upOrDown == '+')
+				{
+					mat_diffuse[0] += 0.01;
+					if (mat_diffuse[0] > 1)
+						mat_diffuse[0] = 1;
+				}
+				else if (changingColour == GREEN && upOrDown == '-')
+				{
+					mat_diffuse[1] -= 0.01;
+					if (mat_diffuse[1] < 0)
+						mat_diffuse[1] = 0;
+				}
+				else if (changingColour == GREEN && upOrDown == '+')
+				{
+					mat_diffuse[0] += 0.01;
+					if (mat_diffuse[0] > 1)
+						mat_diffuse[0] = 1;
+				}
+				else if (changingColour == BLUE && upOrDown == '-')
+				{
+					mat_diffuse[2] -= 0.01;
+					if (mat_diffuse[2] < 0)
+						mat_diffuse[2] = 0;
+				}
+				else if (changingColour == BLUE && upOrDown == '+')
+				{
+					mat_diffuse[0] += 0.01;
+					if (mat_diffuse[0] > 1)
+						mat_diffuse[0] = 1;
+				}
+			}
+			break;
+		case SPECULAR:
+			{
+				if (changingColour == RED && upOrDown == '-')
+				{
+					mat_specular[0] -= 0.01;
+					if (mat_specular[0] < 0)
+						mat_specular[0] = 0;
+				}
+				else if (changingColour == RED && upOrDown == '+')
+				{
+					mat_specular[0] += 0.01;
+					if (mat_specular[0] > 1)
+						mat_specular[0] = 1;
+				}
+				else if (changingColour == GREEN && upOrDown == '-')
+				{
+					mat_specular[1] -= 0.01;
+					if (mat_specular[1] < 0)
+						mat_specular[1] = 0;
+				}
+				else if (changingColour == GREEN && upOrDown == '+')
+				{
+					mat_specular[0] += 0.01;
+					if (mat_specular[0] > 1)
+						mat_specular[0] = 1;
+				}
+				else if (changingColour == BLUE && upOrDown == '-')
+				{
+					mat_specular[2] -= 0.01;
+					if (mat_specular[2] < 0)
+						mat_specular[2] = 0;
+				}
+				else if (changingColour == BLUE && upOrDown == '+')
+				{
+					mat_specular[0] += 0.01;
+					if (mat_specular[0] > 1)
+						mat_specular[0] = 1;
+				}
+			}
+			break;
+		case EMISSION:
+			{
+				if (changingColour == RED && upOrDown == '-')
+				{
+					mat_emission[0] -= 0.01;
+					if (mat_emission[0] < 0)
+						mat_emission[0] = 0;
+				}
+				else if (changingColour == RED && upOrDown == '+')
+				{
+					mat_emission[0] += 0.01;
+					if (mat_emission[0] > 1)
+						mat_emission[0] = 1;
+				}
+				else if (changingColour == GREEN && upOrDown == '-')
+				{
+					mat_emission[1] -= 0.01;
+					if (mat_emission[1] < 0)
+						mat_emission[1] = 0;
+				}
+				else if (changingColour == GREEN && upOrDown == '+')
+				{
+					mat_emission[0] += 0.01;
+					if (mat_emission[0] > 1)
+						mat_emission[0] = 1;
+				}
+				else if (changingColour == BLUE && upOrDown == '-')
+				{
+					mat_emission[2] -= 0.01;
+					if (mat_emission[2] < 0)
+						mat_emission[2] = 0;
+				}
+				else if (changingColour == BLUE && upOrDown == '+')
+				{
+					mat_emission[0] += 0.01;
+					if (mat_emission[0] > 1)
+						mat_emission[0] = 1;
+				}
+			}
+			break;
+		default:
+			break;
+	}
 }

@@ -3,9 +3,9 @@ LIBDIR = -L /usr/lib
 INCLUDEDIRS = -I ../include/
 OBJDIR = ../obj/
 LNFLAGS = -lGL -lGLU -lGLEW -lglut -lm -Wno-write-strings
-OBJECTS = main.o PentadraPair.o
+OBJECTS = main.o GLDonut.o
 OBJS = $(addprefix $(OBJDIR), $(OBJECTS))
-EXECUTALBE = ../bin/a2
+EXECUTALBE = ../bin/a3
 
 $(EXECUTALBE): $(OBJS)
 	g++ $(LIBDIR) -o $@ $^ $(LNFLAGS)
