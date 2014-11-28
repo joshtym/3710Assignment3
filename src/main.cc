@@ -2,6 +2,7 @@
 #include <cmath>
 #include "GLDonut.h"
 
+// Enum types
 enum Colour{RED = 0, GREEN = 1, BLUE = 2};
 enum Type{AMBIENT = 0, DIFFUSE = 1, SPECULAR = 2, EMISSION = 3};
 
@@ -41,7 +42,8 @@ void rotateAboutArbitraryAxis(double[], GLfloat, GLfloat, GLfloat, double);
 // Deal with OpenGL's rendition of UP, DOWN, LEFT, RIGHT cursor keys
 void processSpecialKeys(int, int, int);
 
-void changeColour(Colour, char, Type);
+// Function which changes the colour in the appropiate material
+void changeColour(char, Type);
 
 // Global Variables
 static GLfloat spin = 0.0;
@@ -49,6 +51,7 @@ static bool isRotating = true;
 static double PI = 3.14159265358979;
 static int screenWidth = 500;
 static int screenHeight = 500;
+static Colour colourBeingChanged = RED;
 
 // Axis details (which axis we are rotating about)
 static GLfloat xAxisRotation = 1.0;
@@ -60,13 +63,14 @@ static double VPN[3];
 static double VUP[3];
 static double VRP[3];
 
+// Material types and their vectors
 static GLfloat mat_ambient[4];
 static GLfloat mat_diffuse[4];
 static GLfloat mat_specular[4];
 static GLfloat mat_emission[4];
 static GLfloat low_shininess[1];
 
-// Global object
+// Global objects
 static GLDonut glDonut1;
 static GLDonut glDonut2;
 static GLDonut glDonut3;
@@ -77,8 +81,6 @@ static GLDonut glDonut7;
 static GLDonut glDonut8;
 static GLDonut glDonut9;
 static GLDonut glDonut10;
-
-static Colour colourBeingChanged = RED;
 
 int main(int argc, char **argv)
 {
@@ -132,7 +134,7 @@ void init()
 	VUP[1] = 1;
 	VUP[2] = 0;
 
-	// Assign initial origin values to Pentadras
+	// Assign initial origin values to Donuts
 	glDonut1.assignOriginValues(cos(0), sin(0), -10);
 	glDonut2.assignOriginValues(cos(PI/3), sin(PI/3), -7);
 	glDonut3.assignOriginValues(cos(2*PI/3), sin(2*PI/3), -4);
@@ -144,15 +146,13 @@ void init()
 	glDonut9.assignOriginValues(cos(2*PI/3), sin(2*PI/3), 14);
 	glDonut10.assignOriginValues(cos(PI), sin(PI), 17);
 	
-	// light properties
+	// Light Properties
 	GLfloat ambient[] = { 0.1, 0.2, 0.05, 1.0 };
 	GLfloat diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat position[] = { 0.0, 3.0, 2.0, 0.0 };
 	
-	// material properties
-	GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
-	
+	// Material Properties
 	mat_ambient[0] = 0.2;
 	mat_ambient[1] = 0.3;
 	mat_ambient[2] = 0.1;
@@ -168,20 +168,20 @@ void init()
 	mat_specular[2] = 1.0;
 	mat_specular[3] = 1.0;
 	
-	GLfloat no_shininess[] = { 0.0 };
 	low_shininess[0] = 5.0;
-	GLfloat high_shininess[] = { 100.0 };
 	
 	mat_emission[0] = 0.03;
 	mat_emission[1] = 0.1;
 	mat_emission[2] = 0.04;
 	mat_emission[3] = 0.0;
 	
+	// Put the light at the appropiate values
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
 	
+	// Initialize the materials with their initial values
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
@@ -210,6 +210,7 @@ void display()
 	glLoadIdentity();
 	gluLookAt(VRP[0], VRP[1], VRP[2], VRP[0] + VPN[0], VRP[1] + VPN[1], VRP[2] + VPN[2], VUP[0], VUP[1], VUP[2]);
 
+	// Redetermine the material values dependant on whether they've changed or not
 	glPushMatrix();
 		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
@@ -334,44 +335,57 @@ void keyboard(unsigned char key, int xPos, int yPos)
 		case 109:
 			rotateAboutArbitraryAxis(VUP, VPN[0], VPN[1], VPN[2], PI/20 * -1);
 			break;
+		// 'h' key
 		case 104:
 			glShadeModel(GL_FLAT);
 			break;
+		// 'H' key
 		case 72:
 			glShadeModel(GL_SMOOTH);
 			break;
+		// '0' key
 		case 48:
 			colourBeingChanged = RED;
 			break;
+		// '1' key
 		case 49:
 			colourBeingChanged = GREEN;
 			break;
+		// '2' key
 		case 50:
 			colourBeingChanged = BLUE;
 			break;
+		// 'a' key
 		case 97:
-			changeColour(colourBeingChanged, '-', AMBIENT);
+			changeColour('-', AMBIENT);
 			break;
+		// 'A' key
 		case 65:
-			changeColour(colourBeingChanged, '+', AMBIENT);
+			changeColour('+', AMBIENT);
 			break;
+		// 'd' key
 		case 100:
-			changeColour(colourBeingChanged, '-', DIFFUSE);
+			changeColour('-', DIFFUSE);
 			break;
+		// 'D' key
 		case 68:
-			changeColour(colourBeingChanged, '+', DIFFUSE);
+			changeColour('+', DIFFUSE);
 			break;
+		// 's' key
 		case 115:
-			changeColour(colourBeingChanged, '-', SPECULAR);
+			changeColour('-', SPECULAR);
 			break;
+		// 'S' key
 		case 83:
-			changeColour(colourBeingChanged, '+', SPECULAR);
+			changeColour('+', SPECULAR);
 			break;
+		// 'e' key
 		case 101:
-			changeColour(colourBeingChanged, '-', EMISSION);
+			changeColour('-', EMISSION);
 			break;
+		// 'E' key
 		case 69:
-			changeColour(colourBeingChanged, '+', EMISSION);
+			changeColour('+', EMISSION);
 			break;
 		default:
 			break;
@@ -525,43 +539,49 @@ void rotateAboutArbitraryAxis(double* A, GLfloat uX, GLfloat uY, GLfloat uZ, dou
 	A[2] = lv0 * (uZ*uX * (1.0 - ct) - uY*st) + lv1 * (uY*uZ * (1.0 - ct) + uX*st) + lv2 * (uZ*uZ +  ct * (1.0 - uZ*uZ));
 }
 
-void changeColour(Colour changingColour, char upOrDown, Type typeBeingChanged)
+//***************************************************************
+// Function: Colour changer
+// Purpose: Given the whether we are increasing and what type is
+//          being altered, change the appropiate type colour. Clamp
+//          each colour between 0 and 1.
+//***************************************************************
+void changeColour(char upOrDown, Type typeBeingChanged)
 {
 	switch (typeBeingChanged)
 	{
 		case AMBIENT:
 			{
-				if (changingColour == RED && upOrDown == '-')
+				if (colourBeingChanged == RED && upOrDown == '-')
 				{
 					mat_ambient[0] -= 0.01;
 					if (mat_ambient[0] < 0)
 						mat_ambient[0] = 0;
 				}
-				else if (changingColour == RED && upOrDown == '+')
+				else if (colourBeingChanged == RED && upOrDown == '+')
 				{
 					mat_ambient[0] += 0.01;
 					if (mat_ambient[0] > 1)
 						mat_ambient[0] = 1;
 				}
-				else if (changingColour == GREEN && upOrDown == '-')
+				else if (colourBeingChanged == GREEN && upOrDown == '-')
 				{
 					mat_ambient[1] -= 0.01;
 					if (mat_ambient[1] < 0)
 						mat_ambient[1] = 0;
 				}
-				else if (changingColour == GREEN && upOrDown == '+')
+				else if (colourBeingChanged == GREEN && upOrDown == '+')
 				{
 					mat_ambient[0] += 0.01;
 					if (mat_ambient[0] > 1)
 						mat_ambient[0] = 1;
 				}
-				else if (changingColour == BLUE && upOrDown == '-')
+				else if (colourBeingChanged == BLUE && upOrDown == '-')
 				{
 					mat_ambient[2] -= 0.01;
 					if (mat_ambient[2] < 0)
 						mat_ambient[2] = 0;
 				}
-				else if (changingColour == BLUE && upOrDown == '+')
+				else if (colourBeingChanged == BLUE && upOrDown == '+')
 				{
 					mat_ambient[0] += 0.01;
 					if (mat_ambient[0] > 1)
@@ -571,37 +591,37 @@ void changeColour(Colour changingColour, char upOrDown, Type typeBeingChanged)
 			break;
 		case DIFFUSE:
 			{
-				if (changingColour == RED && upOrDown == '-')
+				if (colourBeingChanged == RED && upOrDown == '-')
 				{
 					mat_diffuse[0] -= 0.01;
 					if (mat_diffuse[0] < 0)
 						mat_diffuse[0] = 0;
 				}
-				else if (changingColour == RED && upOrDown == '+')
+				else if (colourBeingChanged == RED && upOrDown == '+')
 				{
 					mat_diffuse[0] += 0.01;
 					if (mat_diffuse[0] > 1)
 						mat_diffuse[0] = 1;
 				}
-				else if (changingColour == GREEN && upOrDown == '-')
+				else if (colourBeingChanged == GREEN && upOrDown == '-')
 				{
 					mat_diffuse[1] -= 0.01;
 					if (mat_diffuse[1] < 0)
 						mat_diffuse[1] = 0;
 				}
-				else if (changingColour == GREEN && upOrDown == '+')
+				else if (colourBeingChanged == GREEN && upOrDown == '+')
 				{
 					mat_diffuse[0] += 0.01;
 					if (mat_diffuse[0] > 1)
 						mat_diffuse[0] = 1;
 				}
-				else if (changingColour == BLUE && upOrDown == '-')
+				else if (colourBeingChanged == BLUE && upOrDown == '-')
 				{
 					mat_diffuse[2] -= 0.01;
 					if (mat_diffuse[2] < 0)
 						mat_diffuse[2] = 0;
 				}
-				else if (changingColour == BLUE && upOrDown == '+')
+				else if (colourBeingChanged == BLUE && upOrDown == '+')
 				{
 					mat_diffuse[0] += 0.01;
 					if (mat_diffuse[0] > 1)
@@ -611,37 +631,37 @@ void changeColour(Colour changingColour, char upOrDown, Type typeBeingChanged)
 			break;
 		case SPECULAR:
 			{
-				if (changingColour == RED && upOrDown == '-')
+				if (colourBeingChanged == RED && upOrDown == '-')
 				{
 					mat_specular[0] -= 0.01;
 					if (mat_specular[0] < 0)
 						mat_specular[0] = 0;
 				}
-				else if (changingColour == RED && upOrDown == '+')
+				else if (colourBeingChanged == RED && upOrDown == '+')
 				{
 					mat_specular[0] += 0.01;
 					if (mat_specular[0] > 1)
 						mat_specular[0] = 1;
 				}
-				else if (changingColour == GREEN && upOrDown == '-')
+				else if (colourBeingChanged == GREEN && upOrDown == '-')
 				{
 					mat_specular[1] -= 0.01;
 					if (mat_specular[1] < 0)
 						mat_specular[1] = 0;
 				}
-				else if (changingColour == GREEN && upOrDown == '+')
+				else if (colourBeingChanged == GREEN && upOrDown == '+')
 				{
 					mat_specular[0] += 0.01;
 					if (mat_specular[0] > 1)
 						mat_specular[0] = 1;
 				}
-				else if (changingColour == BLUE && upOrDown == '-')
+				else if (colourBeingChanged == BLUE && upOrDown == '-')
 				{
 					mat_specular[2] -= 0.01;
 					if (mat_specular[2] < 0)
 						mat_specular[2] = 0;
 				}
-				else if (changingColour == BLUE && upOrDown == '+')
+				else if (colourBeingChanged == BLUE && upOrDown == '+')
 				{
 					mat_specular[0] += 0.01;
 					if (mat_specular[0] > 1)
@@ -651,37 +671,37 @@ void changeColour(Colour changingColour, char upOrDown, Type typeBeingChanged)
 			break;
 		case EMISSION:
 			{
-				if (changingColour == RED && upOrDown == '-')
+				if (colourBeingChanged == RED && upOrDown == '-')
 				{
 					mat_emission[0] -= 0.01;
 					if (mat_emission[0] < 0)
 						mat_emission[0] = 0;
 				}
-				else if (changingColour == RED && upOrDown == '+')
+				else if (colourBeingChanged == RED && upOrDown == '+')
 				{
 					mat_emission[0] += 0.01;
 					if (mat_emission[0] > 1)
 						mat_emission[0] = 1;
 				}
-				else if (changingColour == GREEN && upOrDown == '-')
+				else if (colourBeingChanged == GREEN && upOrDown == '-')
 				{
 					mat_emission[1] -= 0.01;
 					if (mat_emission[1] < 0)
 						mat_emission[1] = 0;
 				}
-				else if (changingColour == GREEN && upOrDown == '+')
+				else if (colourBeingChanged == GREEN && upOrDown == '+')
 				{
 					mat_emission[0] += 0.01;
 					if (mat_emission[0] > 1)
 						mat_emission[0] = 1;
 				}
-				else if (changingColour == BLUE && upOrDown == '-')
+				else if (colourBeingChanged == BLUE && upOrDown == '-')
 				{
 					mat_emission[2] -= 0.01;
 					if (mat_emission[2] < 0)
 						mat_emission[2] = 0;
 				}
-				else if (changingColour == BLUE && upOrDown == '+')
+				else if (colourBeingChanged == BLUE && upOrDown == '+')
 				{
 					mat_emission[0] += 0.01;
 					if (mat_emission[0] > 1)
